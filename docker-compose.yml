@@ -9,9 +9,6 @@ services:
       - ./db:/var/lib/mysql
     environment: 
       MYSQL_ROOT_PASSWORD: P@ssw0rd
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - 3306:3306
     network_mode: bridge
-    
-
