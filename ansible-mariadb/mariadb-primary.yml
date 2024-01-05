@@ -1,0 +1,53 @@
+---
+- name: Deploy Primary MariaDB Server in Docker for Replication
+  hosts: all
+  become: true
+  vars:
+    mariadb_version: "10.1.48"  # Replace with your desired version
+    mariadb_container_name: "mariadb_primary"
+    mariadb_root_password: "your_strong_root_password"  # Replace with your desired password
+    mariadb_replication_user: "replicator"
+    mariadb_replication_password: "replicator_password"  # Replace with your desired replication user password
+    mariadb_database: "exampledb"
+    
+
+  tasks:
+    - name: Pull MariaDB Docker image
+      community.docker.docker_image:
+        name: "mariadb:{{ mariadb_version }}"
+        source: pull
+
+    - name: Run Primary MariaDB container
+      community.docker.docker_container:
+        name: "{{ mariadb_container_name }}"
+        image: "mariadb:{{ mariadb_version }}"
+        state: started
+        restart_policy: always
+        published_ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "{{ mariadb_root_password }}"
+          MYSQL_DATABASE: "{{ mariadb_database }}"
+        command: >
+          --server-id=1
+          --log-bin=mysql-bin
+          --binlog-format=MIXED
+
+    - name: Wait for MariaDB to start
+      community.docker.docker_container_info:
+        name: "{{ mariadb_container_name }}"
+      register: mariadb_container_info
+      until: mariadb_container_info.container.State.Running
+      retries: 10
+      delay: 10
+
+    - name: Create replication user
+      community.mysql.mysql_user:
+        login_host: "{{ ansible_host }}"
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+        name: "{{ mariadb_replication_user }}"
+        password: "{{ mariadb_replication_password }}"
+        priv: "*.*:REPLICATION SLAVE"
+        host: 172.18.0.50
+        state: present

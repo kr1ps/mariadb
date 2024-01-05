@@ -1,0 +1,25 @@
+---
+- name: Deploy MariaDB in Docker and install MySQL client on the host
+  hosts: all
+  become: true
+  vars:
+    mariadb_version: "10.1.48"  # Replace with your desired version
+    mariadb_container_name: "mariadb_server"
+    mariadb_root_password: "password"  # Replace with your desired password
+
+  tasks:
+    - name: Pull MariaDB Docker image
+      community.docker.docker_image:
+        name: "mariadb:{{ mariadb_version }}"
+        source: pull
+
+    - name: Run MariaDB container
+      community.docker.docker_container:
+        name: "{{ mariadb_container_name }}"
+        image: "mariadb:{{ mariadb_version }}"
+        state: started
+        restart_policy: always
+        published_ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: "{{ mariadb_root_password }}"

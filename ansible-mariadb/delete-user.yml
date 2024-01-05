@@ -1,0 +1,22 @@
+---
+- hosts: new
+  become: true
+
+  vars:
+     user_desired: tddr
+     
+     
+  tasks:
+    - name: remove user account
+      user:
+        name: "{{ user_desired }}"
+        state: absent
+        remove: true
+
+    - name: remove user users to sudo no password rights
+      lineinfile:
+        dest: /etc/sudoers
+        regexp: '^{{ user_desired }}'
+        line: '{{ user_desired }} ALL=(ALL) NOPASSWD: ALL'
+        state: absent
+        validate: "visudo -cf %s"

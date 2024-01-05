@@ -1,0 +1,47 @@
+---
+- hosts: new
+  become: true
+
+  vars:
+     user_desired: tddr
+     password_user: $y$j9T$58QGOdFhmON9o6pUS3lck0$Of7I7t6ySxS/9oiCaSETxrrgKMcy/6SlLaPPNGOvjm6 # generate with mkpasswd
+     
+  tasks:
+    - name: Create a Group
+      group:
+        name: docker
+        state: present
+
+    - name: Create a login user
+      user:
+        name: "{{ user_desired }}"
+        password: "{{ password_user }}"
+        groups: # Empty by default, here we give it some groups
+          - sudo
+          - docker
+        state: present
+        shell: /bin/bash       # Defaults to /bin/bash
+        system: no             # Defaults to no
+        createhome: yes        # Defaults to yes
+        home: "/home/{{ user_desired }}"  # Defaults to /home/<username>
+
+    - name: remove test account
+      user:
+        name: test
+        state: absent
+        remove: true
+
+    - name: Add user users to sudo no password rights
+      lineinfile:
+        dest: /etc/sudoers
+        regexp: '^{{ user_desired }}'
+        line: '{{ user_desired }} ALL=(ALL) NOPASSWD: ALL'
+        state: present
+        validate: "visudo -cf %s"
+
+    - name: upload ssh key
+      authorized_key:
+        user: "{{ user_desired }}"
+        state: present
+        key: "{{ lookup('file', '../id_ed25519.pub') }}"
+

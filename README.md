@@ -9,3 +9,7 @@ MysqlDB.
 Enjoy  :)
 
 
+
+10.1.48-MariaDB
+
+mysql -h 127.0.0.1 -P 3306 -u root -p
